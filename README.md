@@ -1,0 +1,1 @@
+# Snake - Logic Programming project
