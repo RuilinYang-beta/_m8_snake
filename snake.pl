@@ -238,5 +238,4 @@ nonTouching([GridH,GridF,GridF2|GridT]):-
 %|  -  -  -  |  -  -  -
 %|  - [1] -  |  - [1] -
 %|  - [2][2] | [2][2] -
-=======
->>>>>>> 0bbb640f8455cef6f7b485b8a8e434613e6ad4bd
+
