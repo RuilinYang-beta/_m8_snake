@@ -1,7 +1,7 @@
 %% You can use this file by including it as follows:
 %%
 %% :- [tests]
-%% 
+%%
 
 %% This file will provide you with some test puzzles,
 %% as well as some test solutions, and a print function.
@@ -11,24 +11,24 @@
 %%
 %% To see what a puzzle looks like, type at the ?-
 %% showPuzzle(p2x2).
-%% 
+%%
 %% Or you can see all puzzles, by typing at the ?-
 %% showPuzzle(P).
 
 %% Make sure you define 'snake.pl'.
 %% If you have, to solve a puzzle and see the result, say p2x2:
 %% solvePuzzle(p2x2).
-%% 
+%%
 %% You should check it accepts correct solutions quickly:
 %% checkCorrect(P).
 %% This should work even if your solver is slow!
-%% 
+%%
 %% Most puzzles should always yield exactly one solution without ?.
 %% There are some puzzles with multiple solutions (indicated as such).
 %%
 %% Don't forget to make sure every distinct solution is given exactly once.
 %%
-%% 
+%%
 
 solvePuzzle(P)
   :- puzzle(P,RowClues,ColClues,Grid)
@@ -139,7 +139,11 @@ puzzle(p12x12,[-1, 3, 7,-1, -1,-1, -1, -1, -1,2,3,4],
 , [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]]
 ).
 
-solution(p4x4,[-1,-1,3,-1],[ -1,-1,-1,3],[[0, 1, 2, 0], [0, 0, 2, 2], [1, 0, 0, 2], [2, 2, 2, 2]]).
+solution(p4x4,[-1,-1,3,-1],[ -1,-1,-1,3],
+         [[0, 1, 2, 0],
+          [0, 0, 2, 2],
+          [1, 0, 0, 2],
+          [2, 2, 2, 2]]).
 
 solution(p5x5,[-1, -1, 3, -1, -1],[-1, 4, -1, -1, 3],
  [ [0, 1, 2, 2, 0]
