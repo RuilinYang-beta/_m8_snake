@@ -258,9 +258,9 @@ nonTouching([GridH,GridF,GridF2|GridT]):-
 %% 1. for `checkDiagTouch`, can build on what we have now, 
 %%    pass the block of 4 to a helper predicate like: 
 %%    helper([A11, A12], [A21, A22]) :- (A11 #= nonZero,  A12 #= zero, 
-%%                                       A21 #= zero,     A22 #\= nonZero), !, fail.
+%%                                       A21 #= zero,     A22 #= nonZero), !, fail.
 %%    helper([A11, A12], [A21, A22]) :- (A11 #= zero,     A12 #= nonZero, 
-%%                                       A21 #= nonZero,  A22 #\= zero), !, fail.
+%%                                       A21 #= nonZero,  A22 #= zero), !, fail.
 %%    helper([_,_], [_,_]) :- succeed.  
 %%      
 %%    in the bracket is the pattern we don't want, anything else succeds.
