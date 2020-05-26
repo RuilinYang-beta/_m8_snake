@@ -11,12 +11,12 @@
 % currently this yields 3 solutions: 1 correct, 2 not connected
 
 test(P, MappedGrid) :-
-    puzzle(P,RowClues,ColClues,Grid),
+        puzzle(P,RowClues,ColClues,Grid),
         snake(RowClues,ColClues,Grid,MappedGrid).
         % print_only_grid(MappedGrid).
 
 snake(RowClues, ColClues, Grid, Extended) :-
-    copyGrid(Grid,Copied),
+        copyGrid(Grid,Copied),
         checkRowClues(Copied, RowClues),
         checkColClues(Copied, ColClues),
         extend_grid(Copied, Extended),
@@ -142,13 +142,15 @@ count_cell(0, 0).
 count_cell(1, 1).
 count_cell(2, 1).
 
+
+
 % CHECKING FOR DIAGONAL TOUCHING
 % simple cases
 checkDiagTouch([_],[_]):-!.
 %| 2 -
 %| - 2
 checkDiagTouch([2,X|T1],[Y,2|T2]):-
-    (X==2,Y\=2);
+    (X==2,Y\=2);                               
     (X\=2,Y==2),
     !,
     checkDiagTouch([X|T1],[2,T2]).
@@ -182,7 +184,7 @@ checkHead([_,2,X|R1],[Y,1,Z|R2],[A,B,C|R3]):-
 %|  -  -  -
 checkHead([X,2,_|R1],[Y,1,Z|R2],[A,B,C|R3]):-
     not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([2,2|R1],[1,Z|R2],[B,C|R3]).
+    !,checkHead([2,2|R1],[1,Z|R2],[B,C|R3]).            
 %|  -  -  -
 %|  - [1][2]
 %|  -  - [N]
@@ -209,6 +211,8 @@ checkHead([X,Y,Z|R1],[A,1,B|R2],[_,2,C|R3]):-
     !,checkHead([Y,Z|R1],[1,B|R2],[2,C|R3]).
 checkHead([_|R1],[_|R2],[_|R3]):-
     !,checkHead(R1,R2,R3).
+
+
 nonTouching([Grid1,Grid2]):-
     !,checkDiagTouch(Grid1,Grid2).
 nonTouching([GridH,GridF,GridF2|GridT]):-
@@ -230,4 +234,47 @@ nonTouching([GridH,GridF,GridF2|GridT]):-
 %|  -  -  -  |  -  -  -
 %|  - [1] -  |  - [1] -
 %|  - [2][2] | [2][2] -
+
+
+
+
+%% ========== some comments ==========
+%% for `checkDiagTouch`, the pattern 
+%% %| 2 1
+%% %| - 2
+%% would pass, though it is not correct.
+%% 
+%% (But I see you are checking the 1 cells in `chechHead`.)
+%% 
+%% line 187/193/205, you cannot be certain that N is 2.
+%% for example, in this case N should be 0: 
+%% %|  -  -  -
+%% %|  - [1] -
+%% %|  - [2] [N] 
+%% %|  - [2] - 
+%% %|  - [2] -
+%% 
+%% ========== improvement idea ==========
+%% 1. for `checkDiagTouch`, can build on what we have now, 
+%%    pass the block of 4 to a helper predicate like: 
+%%    helper([A11, A12], [A21, A22]) :- (A11 #= nonZero,  A12 #= zero, 
+%%                                       A21 #= zero,     A22 #\= nonZero), !, fail.
+%%    helper([A11, A12], [A21, A22]) :- (A11 #= zero,     A12 #= nonZero, 
+%%                                       A21 #= nonZero,  A22 #\= zero), !, fail.
+%%    helper([_,_], [_,_]) :- succeed.  
+%%      
+%%    in the bracket is the pattern we don't want, anything else succeds.
+%%
+%% 2. for `checkHead` you are doing the backtracking (trying for diff possibilities) manually, 
+%%    can make prolog do that, the structure will be very similiar to countNeighbors, 
+%%    I'm thinking maybe we can move `checkHead` to countNeighbors, 
+%%    just need to add a case in `check_neighbors_pattern` when Piece #= 1.
+%%
+
+
+
+
+
+
+
 
