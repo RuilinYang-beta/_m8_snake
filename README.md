@@ -40,7 +40,15 @@
 		0 2 0
 		```
 
+* TODO:
+  There are something I can think of that still need to be done: 
+  * First is of course the improvement of nonTouching.
+  * Second is a sanitary check, that is, to constrain the number of 1s to be two. 
+    This is pretty restrictive, so if we put it as up as possilbe in snake/4, 
+    it will limit the Depth First Tree early on. 
+  * Third is overall efficiency improvement. 
 
+  
 
 
 
