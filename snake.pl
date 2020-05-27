@@ -20,8 +20,8 @@ snake(RowClues, ColClues, Grid, Extended) :-
         checkRowClues(Copied, RowClues),
         checkColClues(Copied, ColClues),
         extend_grid(Copied, Extended),
-        nonTouching(Extended),
-        countNeighbors(Extended).
+        countNeighbors(Extended),
+        nonTouching(Extended).
 
 % snake2(_, _, Grid, Copied) :-
 %         copyGrid(Grid,Copied).
@@ -142,92 +142,65 @@ count_cell(0, 0).
 count_cell(1, 1).
 count_cell(2, 1).
 
-% CHECKING FOR DIAGONAL TOUCHING
-% simple cases
-checkDiagTouch([_],[_]):-!.
-%| 2 -
-%| - 2
-checkDiagTouch([2,X|T1],[Y,2|T2]):-
-    (X==2,Y\=2);
-    (X\=2,Y==2),
-    !,
-    checkDiagTouch([X|T1],[2,T2]).
-%| - 2
-%| 2 -
-checkDiagTouch([X,2|T1],[2,Y|T2]):-
-    (X==2,Y\=2);
-    (X\=2,Y==2),
-    !,
-    checkDiagTouch([2|T1],[Y,T2]).
-% other cases
-checkDiagTouch([_|T1],[_|T2]):-
-    !,checkDiagTouch(T1,T2).
+% Checking for diagonal touching
+touchingLeftDiag([2,0],[0,2]).
+touchingRightDiag([0,2],[2,0]).
 
-% head
-not1or2([]).
-not1or2([H|T]):-
-    H\=1,
-    H\=2,
-    !,not1or2(T).
-% simple cases
-checkHead([_,_],[_,_],[_,_]):-!.
-%| [N][2] -
+checkDiagTouch([_],[_]):-!.
+checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
+    \+ touchingLeftDiag([X1,Y1],[X2,Y2]),
+    \+ touchingRightDiag([X1,Y1],[X2,Y2]),
+    checkDiagTouch([Y1|T1],[Y2|T2]).
+
+% Checking for body-head touching
+case1(M,0):- M \= 0.
+case2(0,N):- N \= 0.
+case3(0,0).
+
+%| [M][2][N]
 %|  - [1] -
 %|  -  -  -
-checkHead([_,2,X|R1],[Y,1,Z|R2],[A,B,C|R3]):-
-    not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([2,X|R1],[1,Z|R2],[B,C|R3]).
-%|  - [2][N]
-%|  - [1] -
-%|  -  -  -
-checkHead([X,2,_|R1],[Y,1,Z|R2],[A,B,C|R3]):-
-    not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([2,2|R1],[1,Z|R2],[B,C|R3]).
-%|  -  -  -
+touchingN([M,2,N],[0,1,0],[0,0,0]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+%|  -  - [M]
 %|  - [1][2]
 %|  -  - [N]
-checkHead([X,Y,Z|R1],[A,1,2|R2],[B,C,_|R3]):-
-    not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([Y,Z|R1],[1,2|R2],[C,2|R3]).
-%|  -  -  -
+touchingE([0,0,M],[0,1,2],[0,0,N]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+%| [M] -  -
 %| [2][1] -
 %| [N] -  -
-checkHead([X,Y,Z|R1],[2,1,A|R2],[_,B,C|R3]):-
-    not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([Y,Z|R1],[1,A|R2],[B,C|R3]).
+touchingW([M,0,0],[2,1,0],[N,0,0]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
 %|  -  -  -
 %|  - [1] -
-%|  - [2][N]
-checkHead([X,Y,Z|R1],[A,1,B|R2],[C,2,_|R3]):-
-    not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([Y,Z|R1],[1,B|R2],[2,2|R3]).
-%|  -  -  -
-%|  - [1] -
-%| [N][2] -
-checkHead([X,Y,Z|R1],[A,1,B|R2],[_,2,C|R3]):-
-    not1or2([X,Y,Z,A,B,C]),
-    !,checkHead([Y,Z|R1],[1,B|R2],[2,C|R3]).
-checkHead([_|R1],[_|R2],[_|R3]):-
-    !,checkHead(R1,R2,R3).
+%| [M][2][N]
+touchingS([0,0,0],[0,1,0],[M,2,N]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+
+checkHead([_,_],[_,_],[_,_]):-!.
+checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
+    \+ touchingS([X,Y,Z],[A,B,C],[D,E,F]),
+    \+ touchingN([X,Y,Z],[A,B,C],[D,E,F]),
+    \+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
+    \+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
+    checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
+
 nonTouching([Grid1,Grid2]):-
     !,checkDiagTouch(Grid1,Grid2).
 nonTouching([GridH,GridF,GridF2|GridT]):-
-    % check head and follow for touching parts
     checkDiagTouch(GridH,GridF),
     checkHead(GridH,GridF,GridF2),
     !,nonTouching([GridF,GridF2|GridT]).
 
-%% head and tail control
-%  ---------------------
-%| [2][2] -  |  - [2][2]
-%|  - [1] -  |  - [1] -
-%|  -  -  -  |  -  -  -
-%|
-%|  -  -  -  |  -  -  -
-%|  - [1][2] | [2][1] -
-%|  -  - [2] | [2] -  -
-%|
-%|  -  -  -  |  -  -  -
-%|  - [1] -  |  - [1] -
-%|  - [2][2] | [2][2] -
-
+%[0,0,2,1,0]
+%[0,2,0,2,0]
+%[0,1,0,0,0]
