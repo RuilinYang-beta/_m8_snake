@@ -196,6 +196,7 @@ checkHead([_,_],[_,_],[_,_]):-!.
 checkHead([_,2,X|R1],[Y,1,Z|R2],[A,B,C|R3]):-
     not1or2([X,Y,Z,A,B,C]),
     !,checkHead([2,X|R1],[1,Z|R2],[B,C|R3]).
+
 %|  - [2][N]
 %|  - [1] -
 %|  -  -  -
