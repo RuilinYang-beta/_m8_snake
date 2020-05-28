@@ -3,21 +3,6 @@
 :-set_prolog_flag(clpfd_monotonic, true). % setting to get useful errors sometimes
 
 
-
-% sample usage:
-%
-% this will print each row in the terminal,
-% both in user-friendly format ([S] and [#])
-% and raw number format
-%
-% test(p3x3, [G1,G2, G3]).
-
-
-test(P, MappedGrid) :-
-        puzzle(P,RowClues,ColClues,Grid),
-        snake(RowClues,ColClues,Grid,MappedGrid),
-        print_only_grid(MappedGrid).
-
 snake(RowClues, ColClues, Grid, Trimmed) :-
         copyGrid(Grid,Copied),
         checkRowClues(Copied, RowClues),
