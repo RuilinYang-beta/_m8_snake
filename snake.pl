@@ -4,27 +4,27 @@
 
 
 
-% sample usage: 
-% 
-% this will print each row in the terminal, 
-% both in user-friendly format ([S] and [#]) 
-% and raw number format 
-% 
+% sample usage:
+%
+% this will print each row in the terminal,
+% both in user-friendly format ([S] and [#])
+% and raw number format
+%
 % test(p3x3, [G1,G2, G3]).
 
 
-test(P, MappedGrid) :- 
+test(P, MappedGrid) :-
         puzzle(P,RowClues,ColClues,Grid),
         snake(RowClues,ColClues,Grid,MappedGrid),
         print_only_grid(MappedGrid).
 
-snake(RowClues, ColClues, Grid, Trimmed) :- 
+snake(RowClues, ColClues, Grid, Trimmed) :-
         copyGrid(Grid,Copied),
         checkRowClues(Copied, RowClues),
         checkColClues(Copied, ColClues),
+		%oneHeadOneTail(Copied,0),
         extend_grid(Copied, Extended),
-        countNeighbors(Extended), 
-        nonTouching(Extended),
+        countNeighborsAndNonTouching(Extended),
         trim(Extended, Trimmed).
 
 
@@ -36,22 +36,22 @@ checkRowClues([], []).
 
 checkRowClues([Row|Rows], [Clue|Clues]) :-
         Clue #> -1,
-        Row ins 0..2, 
+        Row ins 0..2,
         sumRow(Row, Clue),
         checkRowClues(Rows, Clues).
 
 checkRowClues([Row|Rows], [Clue|Clues]) :-
-        Clue #= -1, 
-        Row ins 0..2, 
+        Clue #= -1,
+        Row ins 0..2,
         checkRowClues(Rows, Clues).
 
 
 sumRow(Row, Sum) :- sumRow(Row, 0, Sum).
 
-sumRow([], Acc, Acc). 
-sumRow([R|Row], Acc, Sum) :- 
+sumRow([], Acc, Acc).
+sumRow([R|Row], Acc, Sum) :-
         count_cell(R, C),
-        NewAcc is Acc + C, 
+        NewAcc is Acc + C,
         sumRow(Row, NewAcc, Sum).
 
 
@@ -59,7 +59,7 @@ sumRow([R|Row], Acc, Sum) :-
 %% =================== constrain on ColClues ====================
 %% ==============================================================
 
-checkColClues(Grid, ColClues) :- 
+checkColClues(Grid, ColClues) :-
         transpose(Grid, TransGrid),
         checkRowClues(TransGrid, ColClues).
 
@@ -67,13 +67,13 @@ checkColClues(Grid, ColClues) :-
 %% ========== constrain neighbors on N/E/S/W direction ==========
 %% ==============================================================
 
-%% idea: 
+%% idea:
 %% 1. expand the grid, surrounding the original grid by padding row & col of 0s
 %% 2. check the middle cell, with regards to its 4 neighbors
 %% 3. recursively check all the cells in a row, by looking at 3 rows a time
 %% 4. recursively check all the rows in a grid, by looking at 3 rows a time
 
-% ----- [0] the copy function as given ----- 
+% ----- [0] the copy function as given -----
 
 copyGrid([],[]).
 copyGrid([Row|G],[RowS|S]) :- copyRow(Row,RowS), copyGrid(G,S).
@@ -83,38 +83,41 @@ copyRow([-1|R],[_|S]) :- copyRow(R,S), !.      % a -1 applied with this rule, do
 copyRow([Clue|R],[Clue|S]) :- copyRow(R,S).
 
 
-% ----- [1] add padding 0s ----- 
+% ----- [1] add padding 0s -----
 
-extend_grid(OldGrid,NewGrid) :- 
-        transpose(OldGrid,TransGrid), 
-        extend_grid_rows(TransGrid,RowTransGrid), 
-        transpose(RowTransGrid,RowGrid), 
+extend_grid(OldGrid,NewGrid) :-
+        transpose(OldGrid,TransGrid),
+        extend_grid_rows(TransGrid,RowTransGrid),
+        transpose(RowTransGrid,RowGrid),
         extend_grid_rows(RowGrid,NewGrid).
 
 
 extend_grid_rows([], []).
-extend_grid_rows([R|Rs], [NewR|NewRs]) :- 
-        extend_row(R, NewR), 
+extend_grid_rows([R|Rs], [NewR|NewRs]) :-
+        extend_row(R, NewR),
         extend_grid_rows(Rs, NewRs).
 
 
 extend_row(OldRow,NewRow) :- append([0|OldRow],[0],NewRow).
 
 
-% ----- [4] check all rows ----- 
+% ----- [4] check all rows -----
 
-% check_all_rows/1: 
-% takes a list of list, 
+% check_all_rows/1:
+% takes a list of list,
 % where the outer list is the grid, each inner list is a row
 % pass every 3 rows to check_neighbors_rows
 
 % base case: when there is only 2 rows left
-countNeighbors([_, _]).
-countNeighbors([R1, R2, R3|Rest]) :- 
-        check_neighbors_rows(R1, R2, R3), 
-        countNeighbors([R2, R3|Rest]).
+countNeighborsAndNonTouching([R1, R2]):-
+		!,checkDiagTouch(R1,R2).
+countNeighborsAndNonTouching([R1, R2, R3|Rest]) :-
+		check_neighbors_rows(R1, R2, R3),
+		checkDiagTouch(R1,R2),
+		checkHead(R1,R2,R3),
+		countNeighborsAndNonTouching([R2,R3|Rest]).
 
-% ----- [3] recursively check a row ----- 
+% ----- [3] recursively check a row -----
 
 % base case: when each row only has 2 element.
 check_neighbors_rows([_, _], [_, _], [_, _]).
@@ -123,14 +126,14 @@ check_neighbors_rows([_,N,A3|RowA],[W,M,E|RowB],[_,S,C3|RowC]):-
         check_neighbors_rows([N,A3|RowA],[M,E|RowB],[S,C3|RowC]).
 
 
-% ----- [2] check the middle cell ----- 
+% ----- [2] check the middle cell -----
 
 check_neighbors_pattern(0,_,_,_,_).
 check_neighbors_pattern(Piece,N,E,S,W):-
-        Piece in 1..2, 
-        N in 0..2, 
-        E in 0..2, 
-        S in 0..2, 
+        Piece in 1..2,
+        N in 0..2,
+        E in 0..2,
+        S in 0..2,
         W in 0..2,
         % 1 #=< Piece,
         count_cell(N,X1),
@@ -149,11 +152,11 @@ count_cell(2, 1).
 %% =================== trim the expanded grid ===================
 %% ==============================================================
 
-trim(Extended, Result) :- 
-        trimHeadLast(Extended, RowTrimmed), 
+trim(Extended, Result) :-
+        trimHeadLast(Extended, RowTrimmed),
         transpose(RowTrimmed, Trans),
-        trimHeadLast(Trans, TransTrimmed), 
-        transpose(TransTrimmed, Result). 
+        trimHeadLast(Trans, TransTrimmed),
+        transpose(TransTrimmed, Result).
 
 
 
@@ -164,14 +167,8 @@ trimHeadLast([_|Rest], Trimmed) :- append(Trimmed, [_], Rest).
 %% ================ check for diagonal touching =================
 %% ==============================================================
 
-touchingDiag([2,X],[Y,2]):-
-	X \= 0;
-	Y \= 0,
-	not(X==Y).
-touchingDiag([X,2],[2,Y]):-
-	X \= 0;
-	Y \= 0,
-	not(X==Y).
+touchingDiag([2,0],[0,2]).
+touchingDiag([0,2],[2,0]).
 
 checkDiagTouch([_],[_]):-!.
 checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
@@ -223,10 +220,3 @@ checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
     \+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
     \+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
     checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
-
-nonTouching([Row1,Row2]):-
-    !,checkDiagTouch(Row1,Row2).
-nonTouching([GridH,GridF,GridF2|GridT]):-
-    checkDiagTouch(GridH,GridF),
-    checkHead(GridH,GridF,GridF2),
-    !,nonTouching([GridF,GridF2|GridT]).
