@@ -22,10 +22,10 @@ snake(RowClues, ColClues, Grid, Trimmed) :-
         copyGrid(Grid,Copied),
         checkRowClues(Copied, RowClues),
         checkColClues(Copied, ColClues),
-		%oneHeadOneTail(Copied,0),
+		oneHeadOneTail(Copied,0),
         extend_grid(Copied, Extended),
         countNeighborsAndNonTouching(Extended),
-        checkConnectivity(Extended),
+        %checkConnectivity(Extended),
         trim(Extended, Trimmed).
 
 
@@ -155,9 +155,38 @@ count_cell(2, 1).
 %% ==============================================================
 %% ============ sanity check: there are only two 1s =============
 %% ==============================================================
+	
 
+oneHeadOneTail([],2).
+oneHeadOneTail([R1|Rest],X):-
+	\+ X > 2,
+	(
+	!,noHead(R1) -> Y is X;
+	!,oneHead(R1,0) -> Y is X + 1;
+	!,twoHeads(R1,0) -> Y is X + 2;
+	fail
+	),
+	oneHeadOneTail(Rest,Y).
 
+noHead([]).
+noHead([X|Rest]):-
+	\+ X == 1,
+	noHead(Rest).
 
+oneHead([],_).
+oneHead([1|Rest],X):-
+	\+ X \= 1,
+	oneHead(Rest,1).
+oneHead([_|Rest],X):-
+	oneHead(Rest,X).
+	
+twoHeads([],2).
+twoHeads([1|Rest],X):-
+	\+ X > 2,
+	Y is X + 1,
+	oneHead(Rest,Y).
+twoHeads([_|Rest],X):-
+	twoHeads(Rest,X).
 
 
 %% ==============================================================
