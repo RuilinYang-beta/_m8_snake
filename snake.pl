@@ -22,10 +22,9 @@ snake(RowClues, ColClues, Grid, Trimmed) :-
         copyGrid(Grid,Copied),
         checkRowClues(Copied, RowClues),
         checkColClues(Copied, ColClues),
-		oneHeadOneTail(Copied,0),
         extend_grid(Copied, Extended),
         countNeighborsAndNonTouching(Extended),
-        %checkConnectivity(Extended),
+        checkConnectivity(Extended),
         trim(Extended, Trimmed).
 
 
@@ -157,46 +156,10 @@ count_cell(2, 1).
 
 
 %% ==============================================================
-%% ============ sanity check: there are only two 1s =============
-%% ==============================================================
-	
-
-oneHeadOneTail([],2).
-oneHeadOneTail([R1|Rest],X):-
-	\+ X > 2,
-	(
-	!,noHead(R1) -> Y is X;
-	!,oneHead(R1,0) -> Y is X + 1;
-	!,twoHeads(R1,0) -> Y is X + 2;
-	fail
-	),
-	oneHeadOneTail(Rest,Y).
-
-noHead([]).
-noHead([X|Rest]):-
-	\+ X == 1,
-	noHead(Rest).
-
-oneHead([],_).
-oneHead([1|Rest],X):-
-	\+ X \= 1,
-	oneHead(Rest,1).
-oneHead([_|Rest],X):-
-	oneHead(Rest,X).
-	
-twoHeads([],2).
-twoHeads([1|Rest],X):-
-	\+ X > 2,
-	Y is X + 1,
-	oneHead(Rest,Y).
-twoHeads([_|Rest],X):-
-	twoHeads(Rest,X).
-
-
-
-%% ==============================================================
 %% ================ check for diagonal touching =================
 %% ==============================================================
+
+% ----- check that none of these patterns occur -----
 
 touchingDiag([2,0],[0,2]).
 touchingDiag([0,2],[2,0]).
@@ -209,8 +172,8 @@ touchingDiag([0,2],[1,0]).
 
 checkDiagTouch([_],[_]):-!.
 checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
-    \+ touchingDiag([X1,Y1],[X2,Y2]),
-    checkDiagTouch([Y1|T1],[Y2|T2]).
+		\+ touchingDiag([X1,Y1],[X2,Y2]),
+		checkDiagTouch([Y1|T1],[Y2|T2]).
 
 
 %% ==============================================================
@@ -225,38 +188,38 @@ case3(0,0).
 %|  - [1] -
 %|  -  -  -
 touchingN([M,2,N],[0,1,0],[0,0,0]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
+		case1(M,N),
+		case2(M,N),
+		case3(M,N).
 %|  -  - [M]
 %|  - [1][2]
 %|  -  - [N]
 touchingE([0,0,M],[0,1,2],[0,0,N]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
+		case1(M,N),
+		case2(M,N),
+		case3(M,N).
 %| [M] -  -
 %| [2][1] -
 %| [N] -  -
 touchingW([M,0,0],[2,1,0],[N,0,0]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
+		case1(M,N),
+		case2(M,N),
+		case3(M,N).
 %|  -  -  -
 %|  - [1] -
 %| [M][2][N]
 touchingS([0,0,0],[0,1,0],[M,2,N]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
+		case1(M,N),
+		case2(M,N),
+		case3(M,N).
 
 checkHead([_,_],[_,_],[_,_]):-!.
 checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
-    \+ touchingS([X,Y,Z],[A,B,C],[D,E,F]),
-    \+ touchingN([X,Y,Z],[A,B,C],[D,E,F]),
-    \+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
-    \+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
-    checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
+		\+ touchingS([X,Y,Z],[A,B,C],[D,E,F]),
+		\+ touchingN([X,Y,Z],[A,B,C],[D,E,F]),
+		\+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
+		\+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
+		checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
 
 
 %% ==============================================================
