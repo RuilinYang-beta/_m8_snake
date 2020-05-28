@@ -111,18 +111,12 @@ extend_row(OldRow,NewRow) :- append([0|OldRow],[0],NewRow).
 
 % ----- [2] check all rows -----
 
-% check_all_rows/1:
-% takes a list of list,
-% where the outer list is the grid, each inner list is a row
-% pass every 3 rows to check_neighbors_rows
-
 % base case: when there is only 2 rows left
 countNeighborsAndNonTouching([R1, R2]):-
 		!,checkDiagTouch(R1,R2).
 countNeighborsAndNonTouching([R1, R2, R3|Rest]) :-
 		check_neighbors_rows(R1, R2, R3),
 		checkDiagTouch(R1,R2),
-		checkHead(R1,R2,R3),
 		countNeighborsAndNonTouching([R2,R3|Rest]).
 
 % ----- [3] recursively check a row -----
@@ -169,57 +163,10 @@ touchingDiag([2,0],[0,1]).
 touchingDiag([0,2],[1,0]).
 
 
-
 checkDiagTouch([_],[_]):-!.
 checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
 		\+ touchingDiag([X1,Y1],[X2,Y2]),
 		checkDiagTouch([Y1|T1],[Y2|T2]).
-
-
-%% ==============================================================
-%% ================ check for body-head touching ================
-%% ==============================================================
-
-case1(M,0):- M \= 0.
-case2(0,N):- N \= 0.
-case3(0,0).
-
-%| [M][2][N]
-%|  - [1] -
-%|  -  -  -
-touchingN([M,2,N],[0,1,0],[0,0,0]):-
-		case1(M,N),
-		case2(M,N),
-		case3(M,N).
-%|  -  - [M]
-%|  - [1][2]
-%|  -  - [N]
-touchingE([0,0,M],[0,1,2],[0,0,N]):-
-		case1(M,N),
-		case2(M,N),
-		case3(M,N).
-%| [M] -  -
-%| [2][1] -
-%| [N] -  -
-touchingW([M,0,0],[2,1,0],[N,0,0]):-
-		case1(M,N),
-		case2(M,N),
-		case3(M,N).
-%|  -  -  -
-%|  - [1] -
-%| [M][2][N]
-touchingS([0,0,0],[0,1,0],[M,2,N]):-
-		case1(M,N),
-		case2(M,N),
-		case3(M,N).
-
-checkHead([_,_],[_,_],[_,_]):-!.
-checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
-		\+ touchingS([X,Y,Z],[A,B,C],[D,E,F]),
-		\+ touchingN([X,Y,Z],[A,B,C],[D,E,F]),
-		\+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
-		\+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
-		checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
 
 
 %% ==============================================================
@@ -330,6 +277,7 @@ getHead([H|_], H).
 
 
 %% ---------- [2] [count snake parts regardless of connectivity] ----------
+
 countSnake(Grid, Count) :- countSnakeGrid(Grid, 0, Count).
 
 countSnakeGrid([], Acc, Acc).
