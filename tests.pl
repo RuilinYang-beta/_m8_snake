@@ -26,7 +26,7 @@
 %% Most puzzles should always yield exactly one solution without ?.
 %% There are some puzzles with multiple solutions (indicated as such).
 %%
-%% Don't forget to make sure every distinct solution is given exactly once.
+%% Don t forget to make sure every distinct solution is given exactly once.
 %%
 %%
 
@@ -139,7 +139,7 @@ puzzle(p12x12,[-1, 3, 7,-1, -1,-1, -1, -1, -1,2,3,4],
 , [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]]
 ).
 
-solution(p4x4,[-1,-1,3,-1],[ -1,-1,-1,3],
+solution(p4x4,[-1,-1,2,-1],[ -1,-1,-1,3],
          [[0, 1, 2, 0],
           [0, 0, 2, 2],
           [1, 0, 0, 2],
