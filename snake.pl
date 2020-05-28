@@ -25,7 +25,7 @@ snake(RowClues, ColClues, Grid, Trimmed) :-
         extend_grid(Copied, Extended),
         countNeighbors(Extended), 
         checkConnectivity(Extended),
-        nonTouching(Extended),
+        % nonTouching(Extended),
         trim(Extended, Trimmed).
 
 
@@ -76,14 +76,14 @@ checkColClues(Grid, ColClues) :-
 %% 3. Recursively check all the cells in a row, by looking at 3 rows a time
 %% 4. Recursively check all the rows in a grid, by looking at 3 rows a time
 
-% ----- [0] the copy function as given ----- 
+% ----- [0] the copy function ----- 
 
 copyGrid([],[]).
 copyGrid([Row|G],[RowS|S]) :- copyRow(Row,RowS), copyGrid(G,S).
 
 copyRow([],[]).
-copyRow([-1|R],[_|S]) :- copyRow(R,S), !.      % a -1 applied with this rule, dont need to try the 3rd rule
-copyRow([Clue|R],[Clue|S]) :- copyRow(R,S).
+copyRow([-1|R],[_|S]) :- copyRow(R,S), _ in 0..2, !.      % a -1 applied with this rule, dont need to try the 3rd rule
+copyRow([Clue|R],[Clue|S]) :- Clue #\= -1, copyRow(R,S).
 
 
 % ----- [1] add padding 0s ----- 
@@ -135,7 +135,6 @@ check_neighbors_pattern(Piece,N,E,S,W):-
         E in 0..2, 
         S in 0..2, 
         W in 0..2,
-        % 1 #=< Piece,
         count_cell(N,X1),
         count_cell(E,X2),
         count_cell(S,X3),
