@@ -25,6 +25,7 @@ snake(RowClues, ColClues, Grid, Trimmed) :-
 		%oneHeadOneTail(Copied,0),
         extend_grid(Copied, Extended),
         countNeighborsAndNonTouching(Extended),
+        checkConnectivity(Extended),
         trim(Extended, Trimmed).
 
 
@@ -34,6 +35,8 @@ snake(RowClues, ColClues, Grid, Trimmed) :-
 
 checkRowClues([], []).
 
+%% TODO: this can be improved by merging the below 2 cases: 
+%% use (cond1 -> result1; cond2 -> result2)
 checkRowClues([Row|Rows], [Clue|Clues]) :-
         Clue #> -1,
         Row ins 0..2,
@@ -65,6 +68,7 @@ checkColClues(Grid, ColClues) :-
 
 %% ==============================================================
 %% ========== constrain neighbors on N/E/S/W direction ==========
+%% =========== call check diagonal and head touching ============
 %% ==============================================================
 
 %% idea:
@@ -149,18 +153,134 @@ count_cell(2, 1).
 
 
 %% ==============================================================
-%% =================== trim the expanded grid ===================
+%% ============ sanity check: there are only two 1s =============
 %% ==============================================================
 
-trim(Extended, Result) :-
-        trimHeadLast(Extended, RowTrimmed),
-        transpose(RowTrimmed, Trans),
-        trimHeadLast(Trans, TransTrimmed),
-        transpose(TransTrimmed, Result).
 
 
 
-trimHeadLast([_|Rest], Trimmed) :- append(Trimmed, [_], Rest).
+
+%% ==============================================================
+%% ==================== check connectedness =====================
+%% ==============================================================
+
+%% this should be done in the expanded grid
+
+%% Overall Idea: 
+%% 1. On one hand, find the head and count how many parts can be traced from the head;
+%% 2. On the other hand, count all snake parts regardless of connectivity
+%% 3. Succeed if the above 2 numbers are equal; fail otherwise.
+checkConnectivity(ExtendedGrid) :-
+        findStart(ExtendedGrid, I, J), 
+        traceSnake(ExtendedGrid, [I,J], CountConnected), 
+        countSnake(ExtendedGrid, CountAll), 
+        CountConnected == CountAll.
+
+
+%% ---------- [1] [count connected parts] ----------
+%% 1. Find a way to move within the grid by index, see: 
+%%    https://stackoverflow.com/questions/34949724/prolog-iterate-through-matrix
+%% 2. Find the start
+%% 3. For every move, mark where I came from, where I am, what is my neighbor, shift focus to next nonzero neighbor
+%% 4. Each move will increment Count by 1
+%% 5. At last check if Count == #number of nonzero cells
+
+
+% ----- [1.1] indexing a grid -----
+% note: index starts at 0
+matrix(Matrix, I, J, Value) :-
+        nth0(I, Matrix, Row),
+        nth0(J, Row, Value).
+
+
+% ----- [1.2] get the index of the first occurence of 1 -----
+findStart(Matrix, I, J) :- 
+        matrix(Matrix, I, J, 1), !.    % find one value of 1 is enough
+
+
+% ----- [1.3] count connected parts from index of head -----
+% traceSnake/3: 
+% count connected parts with the help of traceSnake/6, 
+% which find the next move with the help of getNext/4.
+%
+traceSnake(Matrix, Head, Count) :- 
+        traceSnake(Matrix, [-1,-1], Head, 1, 1, Count).
+
+
+% ----- [1.3.2] recording number of connected parts -----
+% Params:
+% 1. Matrix: needless to say
+% 2. [P,Q] : the previous cell
+% 3. [I,J] : the current cell of focus 
+% 4.  0/1  : this is a flag, indicating if I should continue to look for the next move, 
+%            when it is 1, after moving I continue to search for the next move;
+%            when it is 0, I stop searching and reach the conclusion, 
+%            this acts as the base case. 
+% 5. Acc   : accumulator, recording the number of parts found so far. 
+% 6. Count : number of connected snake parts, only instantiated when flag reaches 0.
+% 
+traceSnake(_, [_,_], [_,_], 0, Acc, Count) :- Count = Acc.
+traceSnake(Matrix, [P,Q], [I,J], 1, Acc, Count) :- 
+        getNext(Matrix, [P,Q], [I,J], Next),
+        (Next \== [] -> NewAcc is Acc + 1, traceSnake(Matrix, [I,J], Next, 1, NewAcc, Count);
+         traceSnake(Matrix, [P,Q], [I,J], 0, Acc, Count)).
+
+
+% ----- [1.3.1] get the next connected cell -----
+% This is a helper function of traceSnake.
+% 1. Of the 4 cells at N/E/S/W direction of the current cell [I,J], 
+%    exclude cells that have value 0, 
+%    exclude cells that is the same as where I came from (I dont want to head back),
+%    there should be 0 or 1 option left.
+% 2. If there is 0 option left, it means I have reach the end of snake trace, 
+%    there is no next move, Next=[].
+% 3. If there is 1 option left, that is where I should go, 
+%    bind it with Next.
+% 
+% Params: 
+% P,Q: where I came from 
+% I,J: where I am
+% Next: where I should go
+getNext(Matrix, [P,Q],[I,J], Next) :-
+        RowUp    is I-1, 
+        RowDown  is I+1, 
+        ColRight is J+1, 
+        ColLeft  is J-1, 
+        Neighbors = [[RowUp  , J],                 % North
+                     [I      , ColRight],          % East
+                     [RowDown, J],                 % South
+                     [I      , ColLeft]            % West
+                    ], 
+        exclude(zeroCell(Matrix), Neighbors, NonZeroNb),
+        exclude(equalPQ([P,Q]), NonZeroNb, Result),
+        (length(Result, 0) -> Next = []; 
+         getHead(Result, Head), Next = Head).
+
+
+zeroCell(Matrix, [X,Y]) :- 
+        matrix(Matrix, X, Y, V), 
+        V #= 0.
+
+equalPQ([P,Q], [X,Y]) :- 
+        [X,Y] == [P,Q].
+       
+getHead([H|_], H).
+
+
+%% ---------- [2] [count snake parts regardless of connectivity] ----------
+countSnake(Grid, Count) :- countSnakeGrid(Grid, 0, Count).
+
+countSnakeGrid([], Acc, Acc).
+countSnakeGrid([R|Grid], Acc, Count) :- 
+        countSnakeRow(R, 0, CountRow), 
+        NewAcc is Acc + CountRow, 
+        countSnakeGrid(Grid, NewAcc, Count).
+
+
+countSnakeRow([], Acc, Acc).
+countSnakeRow([C|Row], Acc, Count) :- 
+        (C in 1..2 -> NewAcc is Acc + 1, countSnakeRow(Row, NewAcc, Count); 
+         countSnakeRow(Row, Acc, Count)).
 
 
 %% ==============================================================
@@ -220,3 +340,16 @@ checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
     \+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
     \+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
     checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
+
+%% ==============================================================
+%% =================== trim the expanded grid ===================
+%% ==============================================================
+
+trim(Extended, Result) :- 
+        trimHeadLast(Extended, RowTrimmed), 
+        transpose(RowTrimmed, Trans),
+        trimHeadLast(Trans, TransTrimmed), 
+        transpose(TransTrimmed, Result). 
+
+trimHeadLast([_|Rest], Trimmed) :- append(Trimmed, [_], Rest).
+
