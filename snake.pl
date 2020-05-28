@@ -164,9 +164,9 @@ touchingDiag([0,2],[1,0]).
 
 
 checkDiagTouch([_],[_]):-!.
-checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
-		\+ touchingDiag([X1,Y1],[X2,Y2]),
-		checkDiagTouch([Y1|T1],[Y2|T2]).
+checkDiagTouch([Piece1,Piece2|Row1],[Piece3,Piece4|Row2]):-
+		\+ touchingDiag([Piece1,Piece2],[Piece3,Piece4]),
+		checkDiagTouch([Piece2|Row1],[Piece4|Row2]).
 
 
 %% ==============================================================
