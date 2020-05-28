@@ -35,8 +35,6 @@ snake(RowClues, ColClues, Grid, Trimmed) :-
 
 checkRowClues([], []).
 
-%% TODO: this can be improved by merging the below 2 cases: 
-%% use (cond1 -> result1; cond2 -> result2)
 checkRowClues([Row|Rows], [Clue|Clues]) :-
         Clue #> -1,
         Row ins 0..2,
@@ -73,19 +71,26 @@ checkColClues(Grid, ColClues) :-
 
 %% idea:
 %% 1. expand the grid, surrounding the original grid by padding row & col of 0s
-%% 2. check the middle cell, with regards to its 4 neighbors
-%% 3. recursively check all the cells in a row, by looking at 3 rows a time
-%% 4. recursively check all the rows in a grid, by looking at 3 rows a time
+%% 2. recursively check all the rows in a grid, by looking at 3 rows a time
+%% 3. recursively check all the cells in a row, by looking at a 3x3 subgrid a time
+%% 4. check the middle cell, with regards to its 4 neighbors
 
-% ----- [0] the copy function as given -----
+
+% ----- [0] the copy function ----- 
 
 copyGrid([],[]).
 copyGrid([Row|G],[RowS|S]) :- copyRow(Row,RowS), copyGrid(G,S).
 
 copyRow([],[]).
-copyRow([-1|R],[_|S]) :- copyRow(R,S), !.      % a -1 applied with this rule, dont need to try the 3rd rule
-copyRow([Clue|R],[Clue|S]) :- copyRow(R,S).
+copyRow([-1|R],[Var|S]) :- copyRow(R,S),  Var in 0\/2, !.      
+copyRow([Clue|R],[Clue|S]) :- Clue #\= -1, copyRow(R,S).
 
+
+% Some remarks: 
+% 1. For copyRow([-1|R],[Var|S]), if -1 applied with this rule, 
+%    dont need to try the 3rd rule, hence the ! at the end. 
+% 2. To ensure there are only two 1s on the grid (one for head, one for tail), 
+%    what is a -1 must be either 0 or 2, impossible to be 1. 
 
 % ----- [1] add padding 0s -----
 
@@ -105,7 +110,7 @@ extend_grid_rows([R|Rs], [NewR|NewRs]) :-
 extend_row(OldRow,NewRow) :- append([0|OldRow],[0],NewRow).
 
 
-% ----- [4] check all rows -----
+% ----- [2] check all rows -----
 
 % check_all_rows/1:
 % takes a list of list,
@@ -130,7 +135,7 @@ check_neighbors_rows([_,N,A3|RowA],[W,M,E|RowB],[_,S,C3|RowC]):-
         check_neighbors_rows([N,A3|RowA],[M,E|RowB],[S,C3|RowC]).
 
 
-% ----- [2] check the middle cell -----
+% ----- [4] check the middle cell -----
 
 check_neighbors_pattern(0,_,_,_,_).
 check_neighbors_pattern(Piece,N,E,S,W):-
@@ -139,7 +144,6 @@ check_neighbors_pattern(Piece,N,E,S,W):-
         E in 0..2,
         S in 0..2,
         W in 0..2,
-        % 1 #=< Piece,
         count_cell(N,X1),
         count_cell(E,X2),
         count_cell(S,X3),
@@ -187,6 +191,72 @@ twoHeads([1|Rest],X):-
 	oneHead(Rest,Y).
 twoHeads([_|Rest],X):-
 	twoHeads(Rest,X).
+
+
+
+%% ==============================================================
+%% ================ check for diagonal touching =================
+%% ==============================================================
+
+touchingDiag([2,0],[0,2]).
+touchingDiag([0,2],[2,0]).
+touchingDiag([1,0],[0,2]).
+touchingDiag([0,1],[2,0]).
+touchingDiag([2,0],[0,1]).
+touchingDiag([0,2],[1,0]).
+
+
+
+checkDiagTouch([_],[_]):-!.
+checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
+    \+ touchingDiag([X1,Y1],[X2,Y2]),
+    checkDiagTouch([Y1|T1],[Y2|T2]).
+
+
+%% ==============================================================
+%% ================ check for body-head touching ================
+%% ==============================================================
+
+case1(M,0):- M \= 0.
+case2(0,N):- N \= 0.
+case3(0,0).
+
+%| [M][2][N]
+%|  - [1] -
+%|  -  -  -
+touchingN([M,2,N],[0,1,0],[0,0,0]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+%|  -  - [M]
+%|  - [1][2]
+%|  -  - [N]
+touchingE([0,0,M],[0,1,2],[0,0,N]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+%| [M] -  -
+%| [2][1] -
+%| [N] -  -
+touchingW([M,0,0],[2,1,0],[N,0,0]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+%|  -  -  -
+%|  - [1] -
+%| [M][2][N]
+touchingS([0,0,0],[0,1,0],[M,2,N]):-
+    case1(M,N),
+    case2(M,N),
+    case3(M,N).
+
+checkHead([_,_],[_,_],[_,_]):-!.
+checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
+    \+ touchingS([X,Y,Z],[A,B,C],[D,E,F]),
+    \+ touchingN([X,Y,Z],[A,B,C],[D,E,F]),
+    \+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
+    \+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
+    checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
 
 
 %% ==============================================================
@@ -312,63 +382,8 @@ countSnakeRow([C|Row], Acc, Count) :-
          countSnakeRow(Row, Acc, Count)).
 
 
-%% ==============================================================
-%% ================ check for diagonal touching =================
-%% ==============================================================
-
-touchingDiag([2,0],[0,2]).
-touchingDiag([0,2],[2,0]).
-
-checkDiagTouch([_],[_]):-!.
-checkDiagTouch([X1,Y1|T1],[X2,Y2|T2]):-
-    \+ touchingDiag([X1,Y1],[X2,Y2]),
-    checkDiagTouch([Y1|T1],[Y2|T2]).
 
 
-%% ==============================================================
-%% ================ check for body-head touching ================
-%% ==============================================================
-
-case1(M,0):- M \= 0.
-case2(0,N):- N \= 0.
-case3(0,0).
-
-%| [M][2][N]
-%|  - [1] -
-%|  -  -  -
-touchingN([M,2,N],[0,1,0],[0,0,0]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
-%|  -  - [M]
-%|  - [1][2]
-%|  -  - [N]
-touchingE([0,0,M],[0,1,2],[0,0,N]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
-%| [M] -  -
-%| [2][1] -
-%| [N] -  -
-touchingW([M,0,0],[2,1,0],[N,0,0]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
-%|  -  -  -
-%|  - [1] -
-%| [M][2][N]
-touchingS([0,0,0],[0,1,0],[M,2,N]):-
-    case1(M,N),
-    case2(M,N),
-    case3(M,N).
-
-checkHead([_,_],[_,_],[_,_]):-!.
-checkHead([X,Y,Z|R1],[A,B,C|R2],[D,E,F|R3]):-
-    \+ touchingS([X,Y,Z],[A,B,C],[D,E,F]),
-    \+ touchingN([X,Y,Z],[A,B,C],[D,E,F]),
-    \+ touchingE([X,Y,Z],[A,B,C],[D,E,F]),
-    \+ touchingW([X,Y,Z],[A,B,C],[D,E,F]),
-    checkHead([Y,Z|R1],[B,C|R2],[E,F|R3]).
 
 %% ==============================================================
 %% =================== trim the expanded grid ===================
